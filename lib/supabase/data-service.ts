@@ -100,8 +100,9 @@ export async function fetchApps(): Promise<AppItem[]> {
         requests: Number(item.requests || 0),
         lastDeploy: item.last_deploy || "just now",
         version: item.version || "v1.0.0",
-        icon: item.icon as any,
-        tone: item.tone as any,
+        icon: item.icon as AppItem["icon"],
+        tone: item.tone as AppItem["tone"],
+        iconUrl: item.icon_url || undefined,
       }));
       cachedApps = mapped;
       return mapped;
@@ -135,6 +136,7 @@ export async function createApp(newApp: AppItem): Promise<AppItem> {
       version: newApp.version,
       icon: newApp.icon,
       tone: newApp.tone,
+      icon_url: newApp.iconUrl || null,
     });
   } catch {
     // local fallback already applied

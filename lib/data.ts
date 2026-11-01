@@ -25,6 +25,8 @@ export interface AppItem {
   version: string;
   icon: IconName;
   tone: Tone;
+  /** Optional custom favicon or logo URL; overrides glyph when set. */
+  iconUrl?: string;
 }
 
 export type ToolCategory =

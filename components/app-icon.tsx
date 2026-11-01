@@ -32,23 +32,36 @@ const avatarTones: Record<Tone, string> = {
 export function AppIcon({
   name,
   tone = "violet",
+  imageUrl,
   className,
   iconClassName,
 }: {
   name: IconName;
   tone?: Tone;
+  imageUrl?: string;
   className?: string;
   iconClassName?: string;
 }) {
+  const trimmedUrl = imageUrl?.trim();
+
   return (
     <div
       className={cn(
-        "flex size-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br ring-1 ring-inset",
+        "flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-gradient-to-br ring-1 ring-inset",
         appTones[tone],
         className,
       )}
     >
-      <Icon name={name} className={cn("size-5", iconClassName)} />
+      {trimmedUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={trimmedUrl}
+          alt=""
+          className={cn("size-full object-cover", iconClassName)}
+        />
+      ) : (
+        <Icon name={name} className={cn("size-5", iconClassName)} />
+      )}
     </div>
   );
 }

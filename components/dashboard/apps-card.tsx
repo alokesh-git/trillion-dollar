@@ -58,6 +58,7 @@ export function AppsCard() {
               <AppIcon
                 name={app.icon}
                 tone={app.tone}
+                imageUrl={app.iconUrl}
                 className="size-9 shrink-0"
                 iconClassName="size-4"
               />

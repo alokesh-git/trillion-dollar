@@ -18,7 +18,7 @@ import {
   Trash2,
   Upload,
 } from "lucide-react";
-import { type AppItem, type Environment, type AppStatus } from "@/lib/data";
+import { type AppItem, type Environment, type AppStatus, type Tone } from "@/lib/data";
 import {
   fetchApps,
   createApp as supabaseCreateApp,
@@ -30,6 +30,12 @@ import type { FeaturePriority } from "@/lib/planning/types";
 import { formatCompact } from "@/lib/utils";
 import { SummaryCard } from "@/components/summary-card";
 import { AppIcon } from "@/components/app-icon";
+import {
+  AppIconPicker,
+  isIconName,
+  isTone,
+} from "@/components/apps/app-icon-picker";
+import type { IconName } from "@/components/icon";
 import { AppStatusBadge } from "@/components/app-status-badge";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
@@ -83,6 +89,9 @@ export function AppsView() {
   >([{ id: "stage-planning", name: "Planning" }]);
   const [saving, setSaving] = useState(false);
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+  const [pickerIcon, setPickerIcon] = useState<IconName>("app-window");
+  const [pickerTone, setPickerTone] = useState<Tone>("violet");
+  const [pickerIconUrl, setPickerIconUrl] = useState("");
 
   async function loadData() {
     setLoading(true);
@@ -99,6 +108,9 @@ export function AppsView() {
     if (!dialogOpen) return;
     const stages = loadPlanningWorkspace().stages;
     if (stages.length > 0) setPlanningStages(stages);
+    setPickerIcon("app-window");
+    setPickerTone("violet");
+    setPickerIconUrl("");
   }, [dialogOpen]);
 
   const filtered = useMemo(() => {
@@ -133,10 +145,9 @@ export function AppsView() {
       return;
     }
 
-    const tones = ["violet", "sky", "emerald", "amber", "fuchsia", "indigo", "cyan"] as const;
-    const icons = ["app-window", "credit-card", "layout-dashboard", "rocket", "book-open", "webhook", "shield"] as const;
-    const randomTone = tones[Math.floor(Math.random() * tones.length)];
-    const randomIcon = icons[Math.floor(Math.random() * icons.length)];
+    const iconRaw = String(formData.get("icon") ?? "app-window");
+    const toneRaw = String(formData.get("tone") ?? "violet");
+    const iconUrl = String(formData.get("iconUrl") ?? "").trim();
 
     const newApp: AppItem = {
       id: `app_${Date.now()}`,
@@ -151,8 +162,9 @@ export function AppsView() {
       requests: 0,
       lastDeploy: "just added",
       version: String(formData.get("version") ?? "").trim() || "v0.1.0",
-      icon: randomIcon,
-      tone: randomTone,
+      icon: isIconName(iconRaw) ? iconRaw : "app-window",
+      tone: isTone(toneRaw) ? toneRaw : "violet",
+      iconUrl: iconUrl || undefined,
     };
 
     setAppList((current) => [newApp, ...current]);
@@ -320,6 +332,7 @@ export function AppsView() {
                       <AppIcon
                         name={app.icon}
                         tone={app.tone}
+                        imageUrl={app.iconUrl}
                         className="size-9"
                         iconClassName="size-4"
                       />
@@ -482,6 +495,15 @@ export function AppsView() {
                 autoComplete="off"
               />
             </div>
+
+            <AppIconPicker
+              icon={pickerIcon}
+              tone={pickerTone}
+              iconUrl={pickerIconUrl}
+              onIconChange={setPickerIcon}
+              onToneChange={setPickerTone}
+              onIconUrlChange={setPickerIconUrl}
+            />
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">

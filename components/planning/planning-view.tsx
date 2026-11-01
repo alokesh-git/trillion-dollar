@@ -415,6 +415,7 @@ function AppsPlanningPanel({
                 <AppIcon
                   name={app.icon}
                   tone={app.tone}
+                  imageUrl={app.iconUrl}
                   className="size-9 shrink-0"
                   iconClassName="size-4"
                 />
@@ -528,6 +529,7 @@ function StageBoard({
                           <AppIcon
                             name={linkedApp.icon}
                             tone={linkedApp.tone}
+                            imageUrl={linkedApp.iconUrl}
                             className="size-5 shrink-0"
                             iconClassName="size-2.5"
                           />

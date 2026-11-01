@@ -33,6 +33,7 @@ create table if not exists public.apps (
   version text not null default 'v1.0.0',
   icon text not null default 'app-window',
   tone text not null default 'violet',
+  icon_url text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -334,3 +335,6 @@ values
   ('key_ci', 'CI / GitHub Actions', 'md_test_', 'md_test_99bc…44e2', '4h ago', 'active'),
   ('key_legacy', 'Legacy Webhook Secret', 'md_wh_', 'md_wh_12ae…91bc', '3mo ago', 'revoked')
 on conflict (id) do nothing;
+
+-- Existing projects: add optional favicon URL column
+alter table public.apps add column if not exists icon_url text;
