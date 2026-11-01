@@ -15,13 +15,11 @@ import {
   Users,
 } from "lucide-react";
 import {
-  apiKeys as seedApiKeys,
-  invoices,
-  teamMembers as seedTeamMembers,
-  usage,
   type ApiKey,
+  type Invoice,
   type TeamMember,
   type Tone,
+  type UsageMeter,
 } from "@/lib/data";
 import {
   fetchWorkspaceSettings,
@@ -66,6 +64,20 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+
+const planUsage: UsageMeter[] = [
+  { label: "Seats", percent: 67, display: "8 of 12" },
+  { label: "API calls", percent: 68, display: "6.8M of 10M" },
+  { label: "Storage", percent: 57, display: "142 of 250 GB" },
+  { label: "Bandwidth", percent: 60, display: "1.2 of 2 TB" },
+];
+
+const billingInvoices: Invoice[] = [
+  { id: "INV-2026-010", date: "Oct 1, 2026", amount: "$249.00", status: "Paid" },
+  { id: "INV-2026-009", date: "Sep 1, 2026", amount: "$249.00", status: "Paid" },
+  { id: "INV-2026-008", date: "Aug 1, 2026", amount: "$249.00", status: "Paid" },
+  { id: "INV-2026-007", date: "Jul 1, 2026", amount: "$199.00", status: "Paid" },
+];
 
 const tabs = [
   { id: "profile", label: "Profile", icon: UserRound },
@@ -445,6 +457,8 @@ const roleVariant: Record<
   Admin: "info",
   Developer: "secondary",
   Billing: "warning",
+  Member: "secondary",
+  Viewer: "info",
 };
 
 function TeamPanel() {
@@ -781,7 +795,7 @@ function BillingPanel() {
           </div>
         </div>
         <CardContent className="space-y-4 pt-5">
-          {usage.map((item) => (
+          {planUsage.map((item) => (
             <div key={item.label}>
               <div className="flex items-center justify-between text-xs">
                 <span className="text-muted-foreground">{item.label}</span>
@@ -859,7 +873,7 @@ function BillingPanel() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {invoices.map((invoice) => (
+              {billingInvoices.map((invoice) => (
                 <TableRow key={invoice.id}>
                   <TableCell className="pl-5">
                     <span className="font-mono text-[11px]">{invoice.id}</span>

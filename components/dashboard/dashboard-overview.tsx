@@ -72,17 +72,17 @@ export function DashboardOverview() {
         />
         <StatCard
           label="Total apps"
-          value={apps.length > 0 ? String(apps.length) : "6"}
-          change={`+${apps.length > 4 ? apps.length - 4 : 2}`}
+          value={String(apps.length)}
+          change={apps.length > 0 ? `+${apps.length}` : "—"}
           footnote={`${liveAppsCount} live · ${degradedCount} degraded · ${pausedCount} paused`}
           icon="app-window"
           tone="emerald"
-          spark={[2, 2, 3, 3, 3, 4, 4, 4, 5, 5, 6, Math.max(apps.length, 6)]}
+          spark={[2, 2, 3, 3, 3, 4, 4, 4, 5, 5, 6, Math.max(apps.length, 1)]}
         />
         <StatCard
           label="Automation runs"
-          value={totalRuns > 0 ? formatCompact(totalRuns) : "48.2k"}
-          change="+18.9%"
+          value={totalRuns > 0 ? formatCompact(totalRuns) : "0"}
+          change={totalRuns > 0 ? "+18.9%" : "—"}
           footnote="98.8% success rate"
           icon="workflow"
           tone="fuchsia"

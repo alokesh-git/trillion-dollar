@@ -1,5 +1,5 @@
 import { createDefaultPlanningWorkspace } from "@/lib/planning/defaults";
-import type { PlanningWorkspace } from "@/lib/planning/types";
+import type { PlanningFeature, PlanningWorkspace } from "@/lib/planning/types";
 
 const STORAGE_KEY = "trillion-dollar-planning-v1";
 
@@ -44,4 +44,19 @@ export function resetPlanningWorkspace(): PlanningWorkspace {
   const fresh = createDefaultPlanningWorkspace();
   savePlanningWorkspace(fresh);
   return fresh;
+}
+
+export function addPlanningFeature(
+  feature: Omit<PlanningFeature, "id"> & { id?: string },
+): PlanningFeature {
+  const workspace = loadPlanningWorkspace();
+  const created: PlanningFeature = {
+    ...feature,
+    id: feature.id ?? `feat-${crypto.randomUUID()}`,
+  };
+  savePlanningWorkspace({
+    ...workspace,
+    features: [...workspace.features, created],
+  });
+  return created;
 }

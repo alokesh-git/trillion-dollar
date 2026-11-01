@@ -1,12 +1,5 @@
 import { createClient as createBrowserSupabaseClient } from "@/lib/supabase/client";
 import {
-  apps as seedApps,
-  tools as seedTools,
-  automations as seedAutomations,
-  automationRuns as seedRuns,
-  activities as seedActivities,
-  teamMembers as seedTeamMembers,
-  apiKeys as seedApiKeys,
   type AppItem,
   type ToolItem,
   type AutomationItem,
@@ -95,7 +88,7 @@ export async function fetchApps(): Promise<AppItem[]> {
       .select("*")
       .order("created_at", { ascending: false });
 
-    if (!error && data && data.length > 0) {
+    if (!error && data) {
       const mapped: AppItem[] = data.map((item) => ({
         id: item.id,
         name: item.name,
@@ -118,13 +111,13 @@ export async function fetchApps(): Promise<AppItem[]> {
   }
 
   if (!cachedApps) {
-    cachedApps = [...seedApps];
+    cachedApps = [];
   }
   return cachedApps;
 }
 
 export async function createApp(newApp: AppItem): Promise<AppItem> {
-  if (!cachedApps) cachedApps = [...seedApps];
+  if (!cachedApps) cachedApps = [];
   cachedApps = [newApp, ...cachedApps];
 
   try {
@@ -217,7 +210,7 @@ export async function fetchTools(): Promise<ToolItem[]> {
       .select("*")
       .order("created_at", { ascending: true });
 
-    if (!error && data && data.length > 0) {
+    if (!error && data) {
       const mapped: ToolItem[] = data.map((item) => ({
         id: item.id,
         name: item.name,
@@ -236,7 +229,7 @@ export async function fetchTools(): Promise<ToolItem[]> {
   }
 
   if (!cachedTools) {
-    cachedTools = [...seedTools];
+    cachedTools = [];
   }
   return cachedTools;
 }
@@ -270,7 +263,7 @@ export async function toggleToolStatus(id: string, nextStatus: ToolStatus): Prom
 }
 
 export async function createTool(newTool: ToolItem): Promise<ToolItem> {
-  if (!cachedTools) cachedTools = [...seedTools];
+  if (!cachedTools) cachedTools = [];
   cachedTools = [newTool, ...cachedTools];
 
   try {
@@ -312,7 +305,7 @@ export async function fetchAutomations(): Promise<AutomationItem[]> {
       .select("*")
       .order("created_at", { ascending: true });
 
-    if (!error && data && data.length > 0) {
+    if (!error && data) {
       const mapped: AutomationItem[] = data.map((item) => ({
         id: item.id,
         name: item.name,
@@ -334,7 +327,7 @@ export async function fetchAutomations(): Promise<AutomationItem[]> {
   }
 
   if (!cachedAutomations) {
-    cachedAutomations = [...seedAutomations];
+    cachedAutomations = [];
   }
   return cachedAutomations;
 }
@@ -369,7 +362,7 @@ export async function toggleAutomationStatus(
 export async function createAutomation(
   newAuto: AutomationItem,
 ): Promise<AutomationItem> {
-  if (!cachedAutomations) cachedAutomations = [...seedAutomations];
+  if (!cachedAutomations) cachedAutomations = [];
   cachedAutomations = [newAuto, ...cachedAutomations];
 
   try {
@@ -427,7 +420,7 @@ export async function triggerAutomationRun(id: string): Promise<AutomationRun> {
     reference: `exec_${Math.random().toString(36).substring(2, 6)}`,
   };
 
-  if (!cachedRuns) cachedRuns = [...seedRuns];
+  if (!cachedRuns) cachedRuns = [];
   cachedRuns = [newRun, ...cachedRuns];
 
   try {
@@ -474,7 +467,7 @@ export async function fetchAutomationRuns(): Promise<AutomationRun[]> {
       .order("created_at", { ascending: false })
       .limit(20);
 
-    if (!error && data && data.length > 0) {
+    if (!error && data) {
       const mapped: AutomationRun[] = data.map((item) => ({
         id: item.id,
         workflow: item.workflow,
@@ -491,7 +484,7 @@ export async function fetchAutomationRuns(): Promise<AutomationRun[]> {
   }
 
   if (!cachedRuns) {
-    cachedRuns = [...seedRuns];
+    cachedRuns = [];
   }
   return cachedRuns;
 }
@@ -509,7 +502,7 @@ export async function fetchActivities(): Promise<Activity[]> {
       .order("created_at", { ascending: false })
       .limit(20);
 
-    if (!error && data && data.length > 0) {
+    if (!error && data) {
       const mapped: Activity[] = data.map((item) => ({
         id: item.id,
         actor: item.actor,
@@ -527,7 +520,7 @@ export async function fetchActivities(): Promise<Activity[]> {
   }
 
   if (!cachedActivities) {
-    cachedActivities = [...seedActivities];
+    cachedActivities = [];
   }
   return cachedActivities;
 }
@@ -549,7 +542,7 @@ export async function logActivity(act: {
     tone: act.tone,
   };
 
-  if (!cachedActivities) cachedActivities = [...seedActivities];
+  if (!cachedActivities) cachedActivities = [];
   cachedActivities = [newActivity, ...cachedActivities.slice(0, 30)];
 
   try {
@@ -631,7 +624,7 @@ export async function fetchTeamMembers(): Promise<TeamMember[]> {
       .select("*")
       .order("created_at", { ascending: true });
 
-    if (!error && data && data.length > 0) {
+    if (!error && data) {
       const mapped: TeamMember[] = data.map((item) => ({
         id: item.id,
         name: item.name,
@@ -649,7 +642,7 @@ export async function fetchTeamMembers(): Promise<TeamMember[]> {
   }
 
   if (!cachedTeamMembers) {
-    cachedTeamMembers = [...seedTeamMembers];
+    cachedTeamMembers = [];
   }
   return cachedTeamMembers;
 }
@@ -662,7 +655,7 @@ export async function inviteTeamMember(
     id: `mbr_${Date.now()}`,
   };
 
-  if (!cachedTeamMembers) cachedTeamMembers = [...seedTeamMembers];
+  if (!cachedTeamMembers) cachedTeamMembers = [];
   cachedTeamMembers = [...cachedTeamMembers, newMember];
 
   try {
@@ -726,7 +719,7 @@ export async function fetchApiKeys(): Promise<ApiKey[]> {
       .select("*")
       .order("created_at", { ascending: false });
 
-    if (!error && data && data.length > 0) {
+    if (!error && data) {
       const mapped: ApiKey[] = data.map((item) => ({
         id: item.id,
         name: item.name,
@@ -744,7 +737,7 @@ export async function fetchApiKeys(): Promise<ApiKey[]> {
   }
 
   if (!cachedApiKeys) {
-    cachedApiKeys = [...seedApiKeys];
+    cachedApiKeys = [];
   }
   return cachedApiKeys;
 }
@@ -761,7 +754,7 @@ export async function createApiKey(name: string): Promise<ApiKey> {
     status: "active",
   };
 
-  if (!cachedApiKeys) cachedApiKeys = [...seedApiKeys];
+  if (!cachedApiKeys) cachedApiKeys = [];
   cachedApiKeys = [newKey, ...cachedApiKeys];
 
   try {

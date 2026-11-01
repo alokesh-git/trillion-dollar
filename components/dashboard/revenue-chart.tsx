@@ -3,8 +3,23 @@
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle, CardAction } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { revenueSeries } from "@/lib/data";
 import { cn, formatCurrency } from "@/lib/utils";
+import type { ChartPoint } from "@/lib/data";
+
+const revenueSeries: ChartPoint[] = [
+  { label: "Nov", revenue: 25_800, previous: 17_400 },
+  { label: "Dec", revenue: 27_400, previous: 18_200 },
+  { label: "Jan", revenue: 28_900, previous: 19_100 },
+  { label: "Feb", revenue: 30_200, previous: 20_300 },
+  { label: "Mar", revenue: 31_800, previous: 21_600 },
+  { label: "Apr", revenue: 33_100, previous: 22_900 },
+  { label: "May", revenue: 34_900, previous: 24_100 },
+  { label: "Jun", revenue: 36_800, previous: 25_600 },
+  { label: "Jul", revenue: 38_900, previous: 26_800 },
+  { label: "Aug", revenue: 40_600, previous: 28_200 },
+  { label: "Sep", revenue: 42_900, previous: 29_600 },
+  { label: "Oct", revenue: 48_210, previous: 31_400 },
+];
 
 const MIN = 20_000;
 const MAX = 52_000;

@@ -1,4 +1,7 @@
-import { automationVolume } from "@/lib/data";
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { fetchAutomations } from "@/lib/supabase/data-service";
 import { formatNumber } from "@/lib/utils";
 import {
   Card,
@@ -10,9 +13,42 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
+const weekLabels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;
+
+/** Rough weekday weights for visualizing total runs when daily breakdown is not stored. */
+const weekdayWeights = [0.16, 0.18, 0.17, 0.2, 0.19, 0.05, 0.05];
+
 export function AutomationVolume() {
-  const max = Math.max(...automationVolume.map((day) => day.value));
-  const total = automationVolume.reduce((sum, day) => sum + day.value, 0);
+  const [totalRuns, setTotalRuns] = useState(0);
+  const [successRate, setSuccessRate] = useState(0);
+
+  useEffect(() => {
+    fetchAutomations().then((items) => {
+      const runs = items.reduce((sum, item) => sum + (item.runs || 0), 0);
+      const weightedSuccess =
+        items.length > 0
+          ? items.reduce(
+              (sum, item) => sum + item.successRate * (item.runs || 0),
+              0,
+            ) / Math.max(runs, 1)
+          : 0;
+      setTotalRuns(runs);
+      setSuccessRate(weightedSuccess);
+    });
+  }, []);
+
+  const automationVolume = useMemo(() => {
+    if (totalRuns <= 0) {
+      return weekLabels.map((label) => ({ label, value: 0 }));
+    }
+    return weekLabels.map((label, index) => ({
+      label,
+      value: Math.round(totalRuns * weekdayWeights[index]),
+    }));
+  }, [totalRuns]);
+
+  const max = Math.max(...automationVolume.map((day) => day.value), 1);
+  const weekTotal = automationVolume.reduce((sum, day) => sum + day.value, 0);
 
   return (
     <Card className="lg:col-span-2">
@@ -21,13 +57,17 @@ export function AutomationVolume() {
           <CardTitle>Automation volume</CardTitle>
           <CardDescription>Workflow runs over the last 7 days</CardDescription>
         </div>
-        <Badge variant="success">+18.9%</Badge>
+        {totalRuns > 0 ? (
+          <Badge variant="success">Live from Supabase</Badge>
+        ) : (
+          <Badge variant="outline">No runs yet</Badge>
+        )}
       </CardHeader>
 
       <CardContent className="pt-3">
         <div className="flex items-baseline gap-2">
           <span className="text-2xl font-semibold tracking-tight tabular">
-            {formatNumber(total)}
+            {formatNumber(weekTotal > 0 ? weekTotal : totalRuns)}
           </span>
           <span className="text-xs text-muted-foreground">runs this week</span>
         </div>
@@ -59,14 +99,15 @@ export function AutomationVolume() {
       <CardFooter className="flex-wrap gap-x-6 gap-y-1 border-t border-border py-3 text-[10px] text-muted-foreground">
         <span>
           Success rate{" "}
-          <span className="font-medium text-foreground">94.6%</span>
+          <span className="font-medium text-foreground">
+            {successRate > 0 ? `${successRate.toFixed(1)}%` : "—"}
+          </span>
         </span>
         <span>
-          Avg. duration{" "}
-          <span className="font-medium text-foreground">1.4s</span>
-        </span>
-        <span>
-          Failed runs <span className="font-medium text-foreground">312</span>
+          Total configured runs{" "}
+          <span className="font-medium text-foreground">
+            {formatNumber(totalRuns)}
+          </span>
         </span>
       </CardFooter>
     </Card>

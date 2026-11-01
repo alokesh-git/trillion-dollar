@@ -25,6 +25,8 @@ import {
   updateAppStatus as supabaseUpdateAppStatus,
   deleteApp as supabaseDeleteApp,
 } from "@/lib/supabase/data-service";
+import { addPlanningFeature, loadPlanningWorkspace } from "@/lib/planning/storage";
+import type { FeaturePriority } from "@/lib/planning/types";
 import { formatCompact } from "@/lib/utils";
 import { SummaryCard } from "@/components/summary-card";
 import { AppIcon } from "@/components/app-icon";
@@ -49,6 +51,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input, Label } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import {
   Table,
   TableBody,
@@ -74,6 +77,10 @@ export function AppsView() {
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<StatusFilter>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [linkPlanning, setLinkPlanning] = useState(true);
+  const [planningStages, setPlanningStages] = useState<
+    { id: string; name: string }[]
+  >([{ id: "stage-planning", name: "Planning" }]);
   const [saving, setSaving] = useState(false);
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
 
@@ -87,6 +94,12 @@ export function AppsView() {
   useEffect(() => {
     loadData();
   }, []);
+
+  useEffect(() => {
+    if (!dialogOpen) return;
+    const stages = loadPlanningWorkspace().stages;
+    if (stages.length > 0) setPlanningStages(stages);
+  }, [dialogOpen]);
 
   const filtered = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -145,8 +158,30 @@ export function AppsView() {
     setAppList((current) => [newApp, ...current]);
     await supabaseCreateApp(newApp);
 
+    if (linkPlanning) {
+      const planningTitle = String(formData.get("planningTitle") ?? "").trim();
+      const planningStage = String(formData.get("planningStage") ?? "").trim();
+      const planningPriority = String(
+        formData.get("planningPriority") ?? "medium",
+      ) as FeaturePriority;
+      const description =
+        String(formData.get("description") ?? "").trim() ||
+        "Registered for workspace status tracking";
+
+      addPlanningFeature({
+        title: planningTitle || name,
+        description,
+        stageId: planningStage || "stage-planning",
+        targetVersion: newApp.version,
+        priority: planningPriority,
+        tags: ["Apps"],
+        appId: newApp.id,
+      });
+    }
+
     setSaving(false);
     setDialogOpen(false);
+    setLinkPlanning(true);
     setQuery("");
     setStatus("all");
   }
@@ -491,9 +526,65 @@ export function AppsView() {
               </div>
             </div>
 
+            <div className="space-y-3 rounded-xl border border-border/80 bg-muted/15 p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="space-y-0.5">
+                  <p className="text-sm font-medium text-foreground">Planning</p>
+                  <p className="text-[11px] leading-relaxed text-muted-foreground">
+                    Create a roadmap feature linked to this app on the planning board.
+                  </p>
+                </div>
+                <Switch
+                  checked={linkPlanning}
+                  onCheckedChange={setLinkPlanning}
+                  aria-label="Add linked planning feature"
+                />
+              </div>
+
+              {linkPlanning ? (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <Label htmlFor="planning-title">Feature title</Label>
+                    <Input
+                      id="planning-title"
+                      name="planningTitle"
+                      placeholder="Defaults to the app name"
+                      autoComplete="off"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="planning-stage">Board stage</Label>
+                    <Select
+                      id="planning-stage"
+                      name="planningStage"
+                      defaultValue="stage-planning"
+                    >
+                      {planningStages.map((stage) => (
+                        <option key={stage.id} value={stage.id}>
+                          {stage.name}
+                        </option>
+                      ))}
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="planning-priority">Priority</Label>
+                    <Select
+                      id="planning-priority"
+                      name="planningPriority"
+                      defaultValue="medium"
+                    >
+                      <option value="high">High</option>
+                      <option value="medium">Medium</option>
+                      <option value="low">Low</option>
+                    </Select>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+
             <p className="text-[11px] leading-relaxed text-muted-foreground">
-              The entry is saved to Supabase so status stays in sync across Apps,
-              Planning, and the overview.
+              Apps are saved to Supabase for status sync across the workspace. Linked
+              planning features appear on your Planning board in this browser.
             </p>
           </div>
 
