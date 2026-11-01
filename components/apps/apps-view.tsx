@@ -6,6 +6,8 @@ import {
   Activity,
   Boxes,
   Check,
+  ChevronLeft,
+  ChevronRight,
   KanbanSquare,
   MoreVertical,
   Pause,
@@ -27,7 +29,7 @@ import {
 } from "@/lib/supabase/data-service";
 import { addPlanningFeature, loadPlanningWorkspace } from "@/lib/planning/storage";
 import type { FeaturePriority } from "@/lib/planning/types";
-import { formatCompact } from "@/lib/utils";
+import { formatCompact, cn } from "@/lib/utils";
 import { SummaryCard } from "@/components/summary-card";
 import { AppIcon } from "@/components/app-icon";
 import {
@@ -77,6 +79,19 @@ const statusOptions = [
 
 type StatusFilter = (typeof statusOptions)[number]["value"];
 
+const addAppSteps = [
+  {
+    id: "basics",
+    title: "App & icon",
+    description: "Name, description, and how it appears in the workspace.",
+  },
+  {
+    id: "deploy",
+    title: "Status & planning",
+    description: "Environment, version, stack, and optional roadmap link.",
+  },
+] as const;
+
 export function AppsView() {
   const [appList, setAppList] = useState<AppItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -92,6 +107,7 @@ export function AppsView() {
   const [pickerIcon, setPickerIcon] = useState<IconName>("app-window");
   const [pickerTone, setPickerTone] = useState<Tone>("violet");
   const [pickerIconUrl, setPickerIconUrl] = useState("");
+  const [wizardStep, setWizardStep] = useState(0);
 
   async function loadData() {
     setLoading(true);
@@ -111,7 +127,19 @@ export function AppsView() {
     setPickerIcon("app-window");
     setPickerTone("violet");
     setPickerIconUrl("");
+    setWizardStep(0);
   }, [dialogOpen]);
+
+  function goToWizardStep(next: number) {
+    setWizardStep(Math.max(0, Math.min(addAppSteps.length - 1, next)));
+  }
+
+  function handleWizardNext(event: React.MouseEvent<HTMLButtonElement>) {
+    const form = event.currentTarget.form;
+    const nameInput = form?.elements.namedItem("name") as HTMLInputElement | null;
+    if (nameInput && !nameInput.reportValidity()) return;
+    goToWizardStep(wizardStep + 1);
+  }
 
   const filtered = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -464,8 +492,9 @@ export function AppsView() {
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}
         label="Add app for tracking"
+        className="max-w-2xl"
       >
-        <form onSubmit={handleCreateApp}>
+        <form id="add-app-form" onSubmit={handleCreateApp}>
           <DialogHeader onClose={() => setDialogOpen(false)}>
             <DialogTitle>Add app</DialogTitle>
             <DialogDescription>
@@ -474,150 +503,245 @@ export function AppsView() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 px-5 py-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="app-name">App name</Label>
-              <Input
-                id="app-name"
-                name="name"
-                placeholder="e.g. Notifications API"
-                autoComplete="off"
-                required
-              />
-            </div>
+          <div className="border-b border-border px-5 py-3">
+            <div className="flex items-center justify-between gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                disabled={wizardStep === 0}
+                aria-label="Previous step"
+                onClick={() => goToWizardStep(wizardStep - 1)}
+              >
+                <ChevronLeft className="size-4" />
+              </Button>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="app-description">Description</Label>
-              <Input
-                id="app-description"
-                name="description"
-                placeholder="What is this app responsible for?"
-                autoComplete="off"
-              />
-            </div>
-
-            <AppIconPicker
-              icon={pickerIcon}
-              tone={pickerTone}
-              iconUrl={pickerIconUrl}
-              onIconChange={setPickerIcon}
-              onToneChange={setPickerTone}
-              onIconUrlChange={setPickerIconUrl}
-            />
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label htmlFor="app-status">Status</Label>
-                <Select id="app-status" name="status" defaultValue="building">
-                  <option value="building">Building</option>
-                  <option value="live">Live</option>
-                  <option value="degraded">Degraded</option>
-                  <option value="paused">Paused</option>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="app-environment">Environment</Label>
-                <Select
-                  id="app-environment"
-                  name="environment"
-                  defaultValue="Staging"
-                >
-                  <option value="Production">Production</option>
-                  <option value="Staging">Staging</option>
-                  <option value="Preview">Preview</option>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="app-version">Target version</Label>
-                <Input
-                  id="app-version"
-                  name="version"
-                  placeholder="v0.1.0"
-                  autoComplete="off"
-                  defaultValue="v0.1.0"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="app-framework">Stack (optional)</Label>
-                <Input
-                  id="app-framework"
-                  name="framework"
-                  placeholder="Next.js, Go, internal service…"
-                  autoComplete="off"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-3 rounded-xl border border-border/80 bg-muted/15 p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div className="space-y-0.5">
-                  <p className="text-sm font-medium text-foreground">Planning</p>
-                  <p className="text-[11px] leading-relaxed text-muted-foreground">
-                    Create a roadmap feature linked to this app on the planning board.
-                  </p>
+              <div className="flex min-w-0 flex-1 flex-col items-center gap-1.5">
+                <div className="flex items-center gap-1.5">
+                  {addAppSteps.map((step, index) => (
+                    <button
+                      key={step.id}
+                      type="button"
+                      aria-label={`Go to step ${index + 1}: ${step.title}`}
+                      aria-current={wizardStep === index ? "step" : undefined}
+                      onClick={() => {
+                        if (index > wizardStep) {
+                          const form = document.getElementById(
+                            "add-app-form",
+                          ) as HTMLFormElement | null;
+                          const nameInput = form?.elements.namedItem(
+                            "name",
+                          ) as HTMLInputElement | null;
+                          if (nameInput && !nameInput.reportValidity()) return;
+                        }
+                        goToWizardStep(index);
+                      }}
+                      className={cn(
+                        "h-1.5 rounded-full transition-all",
+                        wizardStep === index
+                          ? "w-6 bg-violet-500"
+                          : "w-1.5 bg-muted-foreground/30 hover:bg-muted-foreground/50",
+                      )}
+                    />
+                  ))}
                 </div>
-                <Switch
-                  checked={linkPlanning}
-                  onCheckedChange={setLinkPlanning}
-                  aria-label="Add linked planning feature"
-                />
+                <p className="text-center text-xs font-medium text-foreground">
+                  {addAppSteps[wizardStep].title}
+                </p>
+                <p className="hidden text-center text-[10px] text-muted-foreground sm:block">
+                  {addAppSteps[wizardStep].description}
+                </p>
               </div>
 
-              {linkPlanning ? (
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-1.5 sm:col-span-2">
-                    <Label htmlFor="planning-title">Feature title</Label>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                disabled={wizardStep === addAppSteps.length - 1}
+                aria-label="Next step"
+                onClick={handleWizardNext}
+              >
+                <ChevronRight className="size-4" />
+              </Button>
+            </div>
+          </div>
+
+          <div className="overflow-hidden">
+            <div
+              className="flex w-[200%] transition-transform duration-300 ease-out motion-reduce:transition-none"
+              style={{ transform: `translateX(-${wizardStep * 50}%)` }}
+            >
+              <div className="max-h-[min(52vh,26rem)] w-1/2 shrink-0 overflow-y-auto overscroll-contain px-5 py-4">
+                <div className="space-y-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="app-name">App name</Label>
                     <Input
-                      id="planning-title"
-                      name="planningTitle"
-                      placeholder="Defaults to the app name"
+                      id="app-name"
+                      name="name"
+                      placeholder="e.g. Notifications API"
+                      autoComplete="off"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="app-description">Description</Label>
+                    <Input
+                      id="app-description"
+                      name="description"
+                      placeholder="What is this app responsible for?"
                       autoComplete="off"
                     />
                   </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="planning-stage">Board stage</Label>
-                    <Select
-                      id="planning-stage"
-                      name="planningStage"
-                      defaultValue="stage-planning"
-                    >
-                      {planningStages.map((stage) => (
-                        <option key={stage.id} value={stage.id}>
-                          {stage.name}
-                        </option>
-                      ))}
-                    </Select>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="planning-priority">Priority</Label>
-                    <Select
-                      id="planning-priority"
-                      name="planningPriority"
-                      defaultValue="medium"
-                    >
-                      <option value="high">High</option>
-                      <option value="medium">Medium</option>
-                      <option value="low">Low</option>
-                    </Select>
-                  </div>
-                </div>
-              ) : null}
-            </div>
 
-            <p className="text-[11px] leading-relaxed text-muted-foreground">
-              Apps are saved to Supabase for status sync across the workspace. Linked
-              planning features appear on your Planning board in this browser.
-            </p>
+                  <AppIconPicker
+                    icon={pickerIcon}
+                    tone={pickerTone}
+                    iconUrl={pickerIconUrl}
+                    onIconChange={setPickerIcon}
+                    onToneChange={setPickerTone}
+                    onIconUrlChange={setPickerIconUrl}
+                  />
+                </div>
+              </div>
+
+              <div className="max-h-[min(52vh,26rem)] w-1/2 shrink-0 overflow-y-auto overscroll-contain px-5 py-4">
+                <div className="space-y-4">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="app-status">Status</Label>
+                      <Select id="app-status" name="status" defaultValue="building">
+                        <option value="building">Building</option>
+                        <option value="live">Live</option>
+                        <option value="degraded">Degraded</option>
+                        <option value="paused">Paused</option>
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="app-environment">Environment</Label>
+                      <Select
+                        id="app-environment"
+                        name="environment"
+                        defaultValue="Staging"
+                      >
+                        <option value="Production">Production</option>
+                        <option value="Staging">Staging</option>
+                        <option value="Preview">Preview</option>
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="app-version">Target version</Label>
+                      <Input
+                        id="app-version"
+                        name="version"
+                        placeholder="v0.1.0"
+                        autoComplete="off"
+                        defaultValue="v0.1.0"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="app-framework">Stack (optional)</Label>
+                      <Input
+                        id="app-framework"
+                        name="framework"
+                        placeholder="Next.js, Go, internal service…"
+                        autoComplete="off"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-3 rounded-xl border border-border/80 bg-muted/15 p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="space-y-0.5">
+                        <p className="text-sm font-medium text-foreground">Planning</p>
+                        <p className="text-[11px] leading-relaxed text-muted-foreground">
+                          Create a roadmap feature linked to this app on the planning board.
+                        </p>
+                      </div>
+                      <Switch
+                        checked={linkPlanning}
+                        onCheckedChange={setLinkPlanning}
+                        aria-label="Add linked planning feature"
+                      />
+                    </div>
+
+                    {linkPlanning ? (
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="space-y-1.5 sm:col-span-2">
+                          <Label htmlFor="planning-title">Feature title</Label>
+                          <Input
+                            id="planning-title"
+                            name="planningTitle"
+                            placeholder="Defaults to the app name"
+                            autoComplete="off"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label htmlFor="planning-stage">Board stage</Label>
+                          <Select
+                            id="planning-stage"
+                            name="planningStage"
+                            defaultValue="stage-planning"
+                          >
+                            {planningStages.map((stage) => (
+                              <option key={stage.id} value={stage.id}>
+                                {stage.name}
+                              </option>
+                            ))}
+                          </Select>
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label htmlFor="planning-priority">Priority</Label>
+                          <Select
+                            id="planning-priority"
+                            name="planningPriority"
+                            defaultValue="medium"
+                          >
+                            <option value="high">High</option>
+                            <option value="medium">Medium</option>
+                            <option value="low">Low</option>
+                          </Select>
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+
+                  <p className="text-[11px] leading-relaxed text-muted-foreground">
+                    Apps sync to Supabase across the workspace. Planning features save to
+                    your Planning board in this browser.
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="justify-between sm:justify-between">
             <Button variant="outline" type="button" onClick={() => setDialogOpen(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={saving}>
-              <Plus />
-              {saving ? "Adding…" : "Add app"}
-            </Button>
+            <div className="flex gap-2">
+              {wizardStep > 0 ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => goToWizardStep(wizardStep - 1)}
+                >
+                  <ChevronLeft className="size-4" />
+                  Back
+                </Button>
+              ) : null}
+              {wizardStep < addAppSteps.length - 1 ? (
+                <Button type="button" onClick={handleWizardNext}>
+                  Next
+                  <ChevronRight className="size-4" />
+                </Button>
+              ) : (
+                <Button type="submit" disabled={saving}>
+                  <Plus />
+                  {saving ? "Adding…" : "Add app"}
+                </Button>
+              )}
+            </div>
           </DialogFooter>
         </form>
       </Dialog>
